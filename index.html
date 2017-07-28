@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>新闻懒加载</title>
+  <style type="text/css">
+    *{
+      margin:0;
+      padding:0;
+    }
+    ul{
+      list-style:none;
+    }
+    a{
+      text-decoration:none;
+      color:#333;
+    }
+    .wrap{
+      width:600px;
+      margin:0 auto;
+    }
+    .wrap .news .item{
+      margin-top:20px;
+    }
+    .item::after{
+      content:"";
+      display:block;
+      clear:both;
+    }
+    .item div{
+      float:left; 
+    }
+    .item img{
+      width:50px;
+      height:50px;
+    }
+    .item a>h3{
+      margin-left:50px;
+      margin-bottom:10px;
+      font-size:18px;
+      font-weight:bold;
+    }
+    .item a>p{
+      color:#ccc;
+      margin-left:50px;
+    }
+    .loadmore{
+      visibility: hidden;
+      margin:5px;
+      height:5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <ul class="news">
+    <!---->
+    </ul>
+    <div class="loadmore"></div>
+  </div>
+
+  <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+  <script type="text/javascript">
+    var pageIndex = 0;
+    var isNewsArrive = true;
+    var noMore = false;
+
+    getNews(); 
+
+    $(window).on('scroll',readyToLoad)
+
+
+    function readyToLoad(){
+      if(checkShow($('.loadmore')) && isNewsArrive && !noMore){
+        getNews();
+      }
+    }
+
+
+    function getNews(){
+      isNewsArrive = false;
+      $.ajax({
+        url:'/getNews',
+        method:'get',
+        data:{
+          page:pageIndex,
+          length:5
+        }
+      }).done(function(result){
+        isNewsArrive = true;
+        if(result.status===0){
+          appendHtml(result.data);
+          pageIndex ++;
+          readyToLoad();
+        }else{
+          alert('加载出错！')
+        }
+      }).fail(function(){
+        alert('系统异常!')
+      })
+    }
+
+    //检测元素是否出现在浏览器窗口内
+    function checkShow(ele){
+      var scrollTop = $(window).scrollTop(),
+          windowH = $(window).height(),
+          offsetT = ele.offset().top,
+          h = ele.height();
+      if(offsetT<scrollTop+windowH && offsetT+h>scrollTop){
+        return true;
+      }
+      return false;
+    }
+
+    //将返回数据组装成HTML结构
+    function appendHtml(news){
+      var html = "";
+      if(news.length===0){
+        noMore = true;
+        $('.wrap').append('<p>没有更多内容了</p>')
+        return
+      }
+      $.each(news,function(){
+        html += '<li class="item">'
+        html += '<a href="'+this.link+'">'
+        html += '<div><img src="'+this.img+'"></div>'
+        html += '<h3>'+this.title+'</h3>'
+        html += '<p>'+this.brif+'</p>'
+        html += '</a></li>'
+      })
+      $('.news').append(html);
+    }
+  </script>
+</body>
+</html>
